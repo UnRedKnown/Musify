@@ -38,6 +38,11 @@ class LyricsManager {
       return null;
     }
 
+    final lyricsFromLrclib = await _fetchLyricsFromLrclib(artistName, title);
+    if (lyricsFromLrclib != null) {
+      return lyricsFromLrclib;
+    }
+
     final lyricsFromLyricsOvh = await _fetchLyricsFromLyricsOvh(
       artistName,
       title,
@@ -59,6 +64,41 @@ class LyricsManager {
       title,
     );
     return lyricsFromLyricsMania1;
+  }
+
+  Future<String?> _fetchLyricsFromLrclib(
+    String artistName,
+    String title,
+  ) async {
+    try {
+      final uri = Uri.https('lrclib.net', '/api/search', {
+        'track_name': title,
+        'artist_name': artistName.split(',')[0].trim(),
+      });
+      final response = await http
+          .get(
+            uri,
+            headers: {
+              'User-Agent': 'Musify (https://github.com/gokadzev/Musify)',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final results = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+        for (final item in results) {
+          if (item is! Map<String, dynamic>) continue;
+          final lyrics = item['plainLyrics'] as String?;
+          if (lyrics != null && lyrics.trim().isNotEmpty) {
+            return addCopyright(lyrics, 'lrclib.net');
+          }
+        }
+      }
+    } catch (e) {
+      // Silently fail and return null to try next source
+      return null;
+    }
+    return null;
   }
 
   Future<String?> _fetchLyricsFromLyricsOvh(

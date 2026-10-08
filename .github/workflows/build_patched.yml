@@ -1,0 +1,45 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - lrclib-lyrics
+
+name: Build patched apk
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: '17.x'
+
+      - run: |
+          pip install -U yq
+          echo "FLUTTER_VERSION=$(yq -r .environment.flutter pubspec.yaml | sed 's/\^//g')" >> $GITHUB_ENV
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: "${{ env.FLUTTER_VERSION }}"
+
+      # Throwaway signing key, so no secrets are needed.
+      - run: |
+          keytool -genkeypair -noprompt -keystore android/app/key.jks \
+            -storetype JKS -alias musify -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass musifypatched -keypass musifypatched -dname "CN=Musify patched"
+          echo keyPassword=musifypatched > android/key.properties
+          echo storePassword=musifypatched >> android/key.properties
+          echo keyAlias=musify >> android/key.properties
+
+      - run: flutter pub get
+      - run: flutter build apk --release --split-per-abi --target-platform="android-arm64" --flavor github
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Musify-lrclib-arm64
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-github-release.apk
