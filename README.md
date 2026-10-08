@@ -4,6 +4,7 @@
 # Musify
 
 Unlock the full potential of music: Stream effortlessly with one app!
+Fork added lyrics from LRCLIB (vibecoded)
 
 [![Stars](https://img.shields.io/github/stars/gokadzev/Musify?style=flat-square&color=D3BEAB)](https://github.com/gokadzev/Musify/stargazers)
 [![Forks](https://img.shields.io/github/forks/gokadzev/Musify?style=flat-square&color=D3BEAB)](https://github.com/gokadzev/Musify/fork)
